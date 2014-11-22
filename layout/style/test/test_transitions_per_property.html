@@ -115,6 +115,7 @@ var supported_properties = {
                 test_length_percent_calc_transition,
                 test_length_unclamped, test_percent_unclamped ],
     "clip": [ test_rect_transition ],
+    "clip-path": [ test_clip_path_transition ],
     "color": [ test_color_transition ],
     "fill": [ test_color_transition ],
     "fill-opacity" : [ test_float_zeroToOne_transition,
@@ -565,6 +566,17 @@ var transformTests = [
     end: 'skewX(60deg) rotate(90deg)',
     expected: computeMatrix('rotate(120deg) skewX(' + Math.atan(Math.tan(Math.PI * 60/180) / 2) + 'rad) scale(2, 0.5)'),
     round_error_ok: true },
+];
+
+var clipPathTests = [
+  // { start: "none", end: "none",
+  //   expected: ["none"] },
+  // function from none (number/length)
+  // ...
+  { start: "circle(100px at 100px 100px) border-box",
+    end: "circle(500px at 500px 500px) border-box",
+    expected: ["circle", ["200px", "at", "200px", "200px"], "border-box"]
+  }
 ];
 
 var filterTests = [
@@ -1172,6 +1184,44 @@ function test_border_color_shorthand_transition(prop) {
   test_border_color_transition(prop, get_color_from_shorthand_value, true);
 }
 
+function test_clip_path_equals(computedValStr, expectedList)
+{
+  // Check simple case "none"
+  if (computedValStr == "none" && computedValStr == expectedList[0]) {
+    return true;
+  }
+
+  var regBox = /\s*(content\-box|padding\-box|border\-box|margin\-box|view\-box|stroke\-box|fill\-box)/
+  var matches = computedValStr.split(reg);
+  // format: "shape()" or "shape() reference-box"
+  if (matches.length != 1 && expectedList.length != 1 && expectedList[1] !== matches[1]) {
+    ok(false, "computed style of 'clip-path' isn't in the format we expect");
+    return false;
+  }
+  computedValStr = matches[0];
+
+  // The regular expression does not filter out the last parenthesis.
+  // Remove last character for now.
+  is(computedValStr.substring(computedValStr.length - 1, computedValStr.length),
+                              ')', "Check if function has close-paren");
+  computedValStr = computedValStr.substring(0, computedValStr.length - 1);
+
+  var regShape = /\)*\s*(circle|ellipse|polygon|inset|url)\(/
+  matches = computedValStr.split(reg);
+  // First item must be empty. All other items are of functionName, functionValue.
+  if (!matches || matches.shift() != "") {
+    ok(false, "computed style of 'clip-path' isn't in the format we expect");
+    return false;
+  }
+
+  funcParameters = matches[1].split(/\s+/);
+
+  if (funcParameters != expectedList[1]) {
+    ok(false, "function parameters mismatch");
+  }
+  return true;
+}
+
 function filter_function_list_equals(computedValStr, expectedList)
 {
   // Check simple case "none"
@@ -1234,6 +1284,24 @@ function filter_function_list_equals(computedValStr, expectedList)
     }
   }
   return true;
+}
+
+function test_clip_path_transition(prop) {
+  if (!SpecialPowers.getBoolPref("layout.css.clip-path-shapes.enabled")) {
+    return;
+  }
+  for (var i in clipPathTests) {
+    var test = clipPathTests[i];
+    div.style.setProperty("transition-property", "none", "");
+    div.style.setProperty(prop, test.start, "");
+    cs.getPropertyValue(prop);
+    div.style.setProperty("transition-property", prop, "");
+    div.style.setProperty(prop, test.end, "");
+    var actual = cs.getPropertyValue(prop);
+    ok(test_clip_path_equals(actual, test.expected),
+                                   "Clip-path property is " + actual + " expected values of " +
+                                   test.expected);
+  }
 }
 
 function test_filter_transition(prop) {

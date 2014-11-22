@@ -8820,6 +8820,9 @@ nsRuleNode::SetStyleClipPathToCSSValue(nsStyleClipPath* aStyleClipPath,
                     "expected a basic shape or reference box");
 
   const nsCSSValueList* cur = aValue->GetListValue();
+  if (!cur) {
+    return;
+  }
 
   uint8_t sizingBox = NS_STYLE_CLIP_SHAPE_SIZING_NOBOX;
   nsStyleBasicShape* basicShape = nullptr;

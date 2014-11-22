@@ -1031,6 +1031,25 @@ nsChangeHint nsStyleSVG::CalcDifference(const nsStyleSVG& aOther) const
 }
 
 // --------------------
+// nsBasicShape
+
+nsCSSKeyword nsStyleBasicShape::GetFunctionName() const
+{
+  switch (mType) {
+    case nsStyleBasicShape::Type::ePolygon:
+      return eCSSKeyword_polygon;
+    case nsStyleBasicShape::Type::eCircle:
+      return eCSSKeyword_circle;
+    case nsStyleBasicShape::Type::eEllipse:
+      return eCSSKeyword_ellipse;
+    case nsStyleBasicShape::Type::eInset:
+      return eCSSKeyword_inset;
+  }
+  return eCSSKeyword_UNKNOWN;
+  NS_NOTREACHED("unexpected type");
+}
+
+// --------------------
 // nsStyleClipPath
 //
 nsStyleClipPath::nsStyleClipPath()
